@@ -3,13 +3,35 @@ const bcrypt = require('bcrypt');
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
 const config = require('../config')
+const CartItem = require('../cartItem/model');
 const { getToken } = require('../../utils');
 
 const register = async (req, res, next) => {
     try {
         const payload = req.body;
-        const user = new User(payload);
+        const cart = new CartItem();
+        const user = new User({ ...payload, cart: cart._id });
+        cart.user = user._id;
         await user.save();
+        await cart.save();
+        return res.json(user);
+    } catch (err) {
+        if (err && err.name === 'ValidationError') {
+            return res.json({
+                error: 1,
+                statusCode: 400,
+                message: err.message,
+                fields: err.errors
+            });
+        }
+        next(err);
+    }
+}
+
+const update = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const user = await User.findOneAndUpdate({ _id: id }, req.body, { new: true, runValidators: true });
         return res.json(user);
     } catch (err) {
         if (err && err.name === 'ValidationError') {
@@ -51,9 +73,12 @@ const login = async (req, res, next) => {
         }
         if (!user) {
             // jadi disini untuk membingungkan hacker
-            return res.json({ error: 1, message: 'email or password incorrect' });
+            return res.json({
+                error: 1,
+                statusCode: 401,
+                message: 'email or password incorrect'
+            });
         }
-
         const signed = jwt.sign(user, config.secretKey);
         try {
             await User.findByIdAndUpdate(user._id, { $push: { token: signed } });
@@ -81,7 +106,8 @@ const logout = async (req, res, next) => {
 
         return res.json({
             error: 0,
-            message: 'Logout success'
+            message: 'Logout success',
+            statusCode: 200
         });
 
     } catch (err) {
@@ -93,9 +119,12 @@ const logout = async (req, res, next) => {
 // untuk mengembalikan data user yang sudah login
 const me = (req, res, next) => {
     if (!req.user) {
-        return res.json({ error: 1, message: 'Your are not login or token expired' });
+        return res.json({ error: 1, statusCode: 401, message: 'Your are not login or token expired' });
     }
-    res.json(req.user);
+    res.json({
+        statusCode: 200,
+        user: req.user
+    });
 }
 
 
@@ -106,6 +135,7 @@ const me = (req, res, next) => {
 module.exports = {
     register,
     localStrategy,
+    update,
     login,
     logout,
     me

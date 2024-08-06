@@ -11,13 +11,52 @@ const index = async (req, res, next) => {
     }
 }
 
+const show = async (req, res, next) => {
+    try {
+        const user = req.user;
+        const deliveryAddress = await DeliveryAddress.find({ user: user._id });
+        if (deliveryAddress.length === 0) {
+            return res.json({
+                error: 1,
+                statusCode: 404,
+                message: 'Delivery address not found'
+            });
+        }
+        return res.json(deliveryAddress);
+    } catch (err) {
+        next(err);
+    }
+}
+
+const showOne = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const deliveryAddress = await DeliveryAddress.findOne({ _id: id });
+        if (!deliveryAddress) {
+            return res.json({
+                error: 1,
+                statusCode: 404,
+                message: 'Delivery address not found'
+            });
+        }
+        return res.json(deliveryAddress);
+    } catch (err) {
+        next(err);
+    }
+}
+
 const store = async (req, res, next) => {
     try {
         const deliveryAddress = new DeliveryAddress(req.body);
         const user = req.user
         deliveryAddress.user = user._id; // user._id dari middleware decodeToken dan harus _id karena bukan dari mongoose
         await deliveryAddress.save();
-        return res.json(deliveryAddress);
+        return res.json({
+            success: 1,
+            statusCode: 201,
+            message: 'Delivery address saved',
+            data: deliveryAddress
+        });
     } catch (err) {
         if (err && err.name === 'ValidationError') {
             return res.json({
@@ -43,7 +82,10 @@ const update = async (req, res, next) => {
             });
         } else {
             const deliveryAddress = await DeliveryAddress.findOneAndUpdate({ _id: id }, req.body, { new: true, runValidators: true });
-            return res.json(deliveryAddress);
+            return res.json({
+                statusCode: 200,
+                deliveryAddress
+            });
         }
     } catch (err) {
         if (err && err.name === 'ValidationError') {
@@ -81,5 +123,7 @@ module.exports = {
     index,
     store,
     update,
+    show,
+    showOne,
     destroy
 }

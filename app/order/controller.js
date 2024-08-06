@@ -1,59 +1,58 @@
 const Order = require('./model');
 const OrderItem = require('../orderItem/model');
-const cartItem = require('../cartItem/model');
-const { Types } = require('mongoose');
+const CartItem = require('../cartItem/model');
 const DeliveryAddress = require('../deliveryAddress/model');
 
 const store = async (req, res, next) => {
     try {
-        const { delivery_address, delivery_fee } = req.body;
-        const items = await cartItem.find({ user: req.user._id }).populate('product');
-        if (!item.length) {
+        const { delivery_address, metode_payment } = req.body;
+        if (metode_payment === '') {
             return res.json({
                 error: 1,
-                message: 'Cart is empty'
-            });
+                message: 'Metode payment harus diisi'
+            })
         }
+        const delivery_fee = 20000;
+        const items = await CartItem.findOne({ user: req.user._id }).populate('items.product');
         const address = await DeliveryAddress.findOne({ _id: delivery_address, user: req.user._id });
-        if (!address) {
-            return res.json({
-                error: 1,
-                message: 'Address not found'
-            });
-        }
         const order = new Order({
-            _id: new Types.ObjectId(),
-            status: 'waiting_payment',
             delivery_fee: delivery_fee,
+            metode_payment: metode_payment,
             delivery_address: {
-                provinsi: address.provinsi,
-                kabupaten: address.kabupaten,
-                kecamatan: address.kecamatan,
-                kelurahan: address.kelurahan,
-                detail: address.detail
+                _id: address._id,
             },
+            orderItems: [],
             user: req.user._id
         })
-        const orderItems = await OrderItem.insertMany(items.map(item => ({
-            ...item,
-            name: item.product.name,
-            price: parseInt(item.product.price),
-            qty: parseInt(item.qty),
-            order: order._id,
-            product: item.product._id
-        })));
-        orderItems.forEach(item => {
-            order.orderItems.push(item._id);
-        });
+        const orderItems = await OrderItem.insertMany(items.items.map((item) => {
+            return {
+                name: item.product.name,
+                price: item.product.price,
+                qty: item.qty,
+                order: order._id,
+                product: item.product._id
+            }
+        }))
+        order.orderItems = orderItems;
+
         order.save();
-        await cartItem.deleteMany({ user: req.user._id });
+        await CartItem.findOneAndUpdate(
+            {
+                user: req.user._id,
+            },
+            {
+                $set: {
+                    items: []
+                }
+            },)
         return res.json(order);
     } catch (error) {
-        if (err && err.name === 'ValidationError') {
+        console.error('Error occurred:', error);
+        if (error.name === 'ValidationError') {
             return res.json({
                 error: 1,
-                message: err.message,
-                fields: err.errors
+                message: error.message,
+                fields: error.errors
             });
         }
         next(error);
@@ -68,7 +67,7 @@ const index = async (req, res, next) => {
             .limit(parseInt(limit))
             .skip(parseInt(skip))
             .populate('orderItems')
-            .sort(-createdAt);
+            .sort({ createdAt: -1 });
         return res.json({
             data: orders,
             count,
@@ -76,7 +75,7 @@ const index = async (req, res, next) => {
             skip: parseInt(skip)
         });
     } catch (error) {
-        if (err && err.name === 'ValidationError') {
+        if (error && error.name === 'ValidationError') {
             return res.json({
                 error: 1,
                 message: err.message,
@@ -87,8 +86,26 @@ const index = async (req, res, next) => {
     }
 };
 
+const update = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const order = await Order.findOneAndUpdate({ _id: id }, { $set: { status: 'paid' } }, { new: true });
+        return res.json(order);
+    } catch (error) {
+        if (error && error.name === 'ValidationError') {
+            return res.json({
+                error: 1,
+                message: error.message,
+                fields: error.errors
+            });
+        }
+        next(error);
+    }
+}
+
 
 module.exports = {
     store,
-    index
+    index,
+    update
 }

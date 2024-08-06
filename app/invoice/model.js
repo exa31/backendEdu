@@ -17,32 +17,18 @@ const invoiceSchema = Schema({
         type: Schema.Types.ObjectId,
         ref: 'User'
     },
+    metode_payment: {
+        type: String,
+        enum: ['transfer', 'tunai'],
+    },
     delivery_address: {
-        provinsi: {
-            type: String,
-            required: [true, 'Provinsi is required']
-        },
-        kabupaten: {
-            type: String,
-            required: [true, 'Kabupaten is required']
-        },
-        kecamatan: {
-            type: String,
-            required: [true, 'Kecamatan is required']
-        },
-        kelurahan: {
-            type: String,
-            required: [true, 'Kelurahan is required']
-        },
-        detail: {
-            type: String,
-            required: [true, 'Detail is required']
-        }
+        type: Schema.Types.ObjectId,
+        ref: 'DeliveryAddress'
     },
     payment_status: {
         type: String,
-        enum: ['waiting_payment', 'paid'],
-        default: 'waiting_payment'
+        enum: ['waiting payment', 'paid'],
+        default: 'waiting payment'
     },
     order: {
         type: Schema.Types.ObjectId,

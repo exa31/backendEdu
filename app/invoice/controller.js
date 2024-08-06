@@ -5,7 +5,8 @@ const { policyFor } = require('../../utils');
 const show = async (req, res, next) => {
     try {
         const { order_id } = req.params;
-        const invoice = await Invoice.findOne({ order: order_id }).populate('order').populate('user');
+        const invoice = await Invoice.findOne({ order: order_id }).populate('order').populate('user').populate('delivery_address');
+        console.log(invoice);
         const police = policyFor(req.user);
         const subjectInvoice = subject('Invoice', { user_id: invoice.user._id });
         if (!police.can('read', subjectInvoice)) {
@@ -15,12 +16,32 @@ const show = async (req, res, next) => {
             });
         }
         return res.json(invoice);
+    } catch (error) {
+        next(error);
+    }
+}
 
+const index = async (req, res, next) => {
+    try {
+        const user = req.user;
+        const invoices = await Invoice.find({ user: user._id }).populate('user')
+            .populate('delivery_address')
+            .populate({
+                path: 'order',
+                populate: {
+                    path: 'orderItems',
+                    populate: {
+                        path: 'product'
+                    }
+                }
+            });
+        return res.json(invoices);
     } catch (error) {
         next(error);
     }
 }
 
 module.exports = {
-    show
+    show,
+    index
 }

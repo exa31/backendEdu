@@ -18,7 +18,6 @@ const productSchema = new Schema({
     },
     image_url: {
         type: String,
-        default: 'https://via.placeholder.com/150'
     },
     category: {
         type: Schema.Types.ObjectId,

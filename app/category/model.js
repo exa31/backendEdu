@@ -4,10 +4,13 @@ const { model, Schema } = mongoose;
 const categorySchema = new Schema({
     name: {
         type: String,
-        minlength: [3, 'Panjang kategori minimal 3 karakter'],
-        maxlength: [20, 'Panjang kategori maksimal 20 karakter'],
+        enum: ['Makanan', 'Minuman'],
         required: [true, 'Nama kategori harus diisi']
-    }
+    },
+    tags: [{
+        type: Schema.Types.ObjectId,
+        ref: 'Tag'
+    }]
 });
 
 module.exports = model('Category', categorySchema);

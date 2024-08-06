@@ -3,17 +3,17 @@ const router = require('express').Router();
 const { police_check } = require('../../middlewares');
 const tagController = require('./controller');
 
-router.get('/tag', tagController.index);
+router.get('/tags', tagController.index);
 
-router.post('/tag',
+router.post('/tags',
     police_check('create', 'Tag'),
     tagController.store);
 
-router.put('/tag/:id',
+router.put('/tags/:id',
     police_check('update', 'Tag'),
     tagController.update);
 
-router.delete('/tag/:id',
+router.delete('/tags/:id',
     police_check('delete', 'Tag'),
     tagController.destroy);
 

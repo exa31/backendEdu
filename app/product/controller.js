@@ -9,7 +9,7 @@ const index = async (req, res, next) => {
     try {
         // pemanggilannya dengan cara http://localhost:3000/api/products?limit=10&skip=0
         //pagination
-        const { limit = 10, skip = 0, q = '', category = '', tags = [] } = req.query;
+        const { limit = 0, skip = 0, q = '', category = '', tags = [] } = req.query;
 
         let criteria = {};
 
@@ -31,7 +31,10 @@ const index = async (req, res, next) => {
         }
 
         if (tags.length) {
-            const qTags = await Tag.find({ name: { $in: tags } });
+            tags.split(',');
+            const aTags = tags.split(',')
+            const qTags = await Tag.find({ name: { $in: aTags } });
+
             if (qTags.length > 0) {
                 criteria = {
                     ...criteria,
@@ -49,9 +52,19 @@ const index = async (req, res, next) => {
             .populate('category')
             .populate('tags');
         return res.json({
-            Data: count,
+            data: count,
             products
         });
+    } catch (err) {
+        next(err);
+    }
+}
+
+const show = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const product = await Product.findById(id).populate('category').populate('tags');
+        return res.json(product);
     } catch (err) {
         next(err);
     }
@@ -61,6 +74,7 @@ const index = async (req, res, next) => {
 const store = async (req, res, next) => {
     try {
         const payload = req.body;
+        console.log(payload)
         if (payload.category) {
             // mencari kategori berdasarkan nama kategori yang diinputkan
             const category = await Category.findOne({ name: { $regex: payload.category, $options: 'i' } });
@@ -70,24 +84,18 @@ const store = async (req, res, next) => {
                 // menyimpan kategori baru
                 await newCategory.save();
                 // mengubah id kategori yang diinputkan dengan id kategori baru
-                return payload.category = newCategory.id;
+                payload.category = newCategory.id;
+            } else {
+                payload.category = category.id
             }
-            payload.category = category.id
         }
         if (payload.tags) {
             // mencari tag berdasarkan nama tag yang diinputkan
             const tags = await Tag.find({ name: { $in: payload.tags } });
-            // mencari tag yang tidak ditemukan
-            const newTags = payload.tags.filter(tag => !tags.map(t => t.name).includes(tag));
             // jika tag yang tidak ditemukan lebih dari 0 maka akan membuat tag baru
-            if (newTags.length > 0) {
-                // membuat tag baru
-                const createdTags = await Tag.create(newTags.map(tag => ({ name: tag })));
-                // mengubah id tag yang diinputkan dengan id tag baru dan menggabungkan id tag yang sudah ada
-                return payload.tags = tags.concat(createdTags).map(tag => tag.id);
-            }
-            // mengubah id tag yang diinputkan dengan id tag yang sudah ada
             payload.tags = tags.map(tag => tag.id)
+
+            // mengubah id tag yang diinputkan dengan id tag yang sudah ada
         }
         if (req.file) {
             // mengambil path file yang diupload melalui form
@@ -109,7 +117,7 @@ const store = async (req, res, next) => {
             // Menangani event 'end' ketika proses penyalinan selesai
             src.on('end', async () => {
                 try {
-                    const product = new Product({ ...payload, image_url: filename });
+                    const product = new Product({ ...payload, image_url: `http://localhost:3000/images/products/${filename}` });
                     await product.save();
                     return res.json(product);
                 } catch (err) {
@@ -161,24 +169,18 @@ const update = async (req, res, next) => {
                 // menyimpan kategori baru
                 await newCategory.save();
                 // mengubah id kategori yang diinputkan dengan id kategori baru
-                return payload.category = newCategory._id;
+                payload.category = newCategory.id;
+            } else {
+                payload.category = category.id
             }
-            payload.category = category._id
         }
         if (payload.tags) {
             // mencari tag berdasarkan nama tag yang diinputkan
             const tags = await Tag.find({ name: { $in: payload.tags } });
-            // mencari tag yang tidak ditemukan
-            const newTags = payload.tags.filter(tag => !tags.map(t => t.name).includes(tag));
             // jika tag yang tidak ditemukan lebih dari 0 maka akan membuat tag baru
-            if (newTags.length > 0) {
-                // membuat tag baru
-                const createdTags = await Tag.create(newTags.map(tag => ({ name: tag })));
-                // mengubah id tag yang diinputkan dengan id tag baru dan menggabungkan id tag yang sudah ada
-                return payload.tags = tags.concat(createdTags).map(tag => tag._id);
-            }
-            // mengubah id tag yang diinputkan dengan id tag yang sudah ada
             payload.tags = tags.map(tag => tag.id)
+
+            // mengubah id tag yang diinputkan dengan id tag yang sudah ada
         }
         if (req.file) {
             // mengambil path file yang diupload melalui form
@@ -201,13 +203,14 @@ const update = async (req, res, next) => {
             src.on('end', async () => {
                 try {
                     const productCurrent = await Product.findById(req.params.id);
-                    const currentImage = `${config.rootPath}/public/images/products/${productCurrent.image_url}`;
+                    const filenameCurrent = productCurrent.image_url.split('/').pop();
+                    const currentImage = `${config.rootPath}/public/images/products/${filenameCurrent}`;
                     // jadi kalo ada file yang sama maka file yang lama akan dihapus
                     if (fs.existsSync(currentImage)) {
                         fs.unlinkSync(currentImage);
                     }
                     const { id } = req.params;
-                    const product = await Product.findByIdAndUpdate(id, { ...payload, image_url: filename }, { runValidators: true, new: true });
+                    const product = await Product.findByIdAndUpdate(id, { ...payload, image_url: `http://localhost:3000/images/products/${filename}` }, { runValidators: true, new: true });
                     return res.json(product);
                 } catch (err) {
                     fs.unlinkSync(target_path);
@@ -264,6 +267,7 @@ module.exports = {
     store,
     index,
     update,
-    destroy
+    destroy,
+    show
 
 }

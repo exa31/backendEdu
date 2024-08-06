@@ -48,6 +48,20 @@ app.use('/', (req, res) => {
 
 // kesini dulu baru ke error handler
 // catch 404 and forward to error handler
+app.use(function (err, req, res, next) {
+  console.log(err.name);
+  if (err.name === 'ValidationError') {
+    console.log('error terhandle');
+    return res.json({
+      error: 1,
+      message: err.message,
+      fields: err.errors
+    });
+  } else (
+    next(err)
+  )
+})
+
 app.use(function (req, res, next) {
   next(createError(404));
 });

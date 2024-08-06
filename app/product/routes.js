@@ -8,6 +8,8 @@ const { police_check } = require('../../middlewares');
 router.get('/products', productController.index);
 //os jadi akan menyesuaikan dengan sistem operasi yang digunakan, dan tmpdir akan mengarahkan ke direktori temporary yang ada di sistem operasi tersebut.
 
+router.get('/products/:id', productController.show);
+
 router.post('/products',
     multer({ dest: os.tmpdir() }).single('image'),
     police_check('create', 'Product'),

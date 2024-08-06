@@ -6,10 +6,10 @@ const Invoice = require('../invoice/model');
 const orderSchema = Schema({
     status: {
         type: String,
-        enum: ['waiting_payment', 'paid', 'delivered', 'canceled'],
-        default: 'waiting_payment'
+        enum: ['waiting payment', 'paid', 'delivered', 'canceled'],
+        default: 'waiting payment'
     },
-    delifery_fee: {
+    delivery_fee: {
         type: Number,
         default: 0
     },
@@ -18,26 +18,12 @@ const orderSchema = Schema({
         ref: 'User'
     },
     delivery_address: {
-        provinsi: {
-            type: String,
-            required: [true, 'Provinsi is required']
-        },
-        kabupaten: {
-            type: String,
-            required: [true, 'Kabupaten is required']
-        },
-        kecamatan: {
-            type: String,
-            required: [true, 'Kecamatan is required']
-        },
-        kelurahan: {
-            type: String,
-            required: [true, 'Kelurahan is required']
-        },
-        detail: {
-            type: String,
-            required: [true, 'Detail is required']
-        }
+        type: Schema.Types.ObjectId,
+        ref: 'DeliveryAddress'
+    },
+    metode_payment: {
+        type: String,
+        enum: ['transfer', 'tunai'],
     },
     orderItems: [{
         type: Schema.Types.ObjectId,
@@ -46,20 +32,35 @@ const orderSchema = Schema({
 }, { timestamps: true });
 
 orderSchema.plugin(AutoIncrement, { inc_field: 'order_number' });
-orderSchema.virtual('items_count').get(function () {
-    return this.orderItems.reduce((total, item) => total + parseInt(item.qty), 0);
-});
+// orderSchema.virtual('items_count').get(function () {
+//     return this.orderItems.reduce((total, item) => total + parseInt(item.qty), 0);
+// });
 orderSchema.post('save', async function () {
+    this.orderItems.forEach(product => {
+        console.log(product.name)
+
+    });
     const sub_total = this.orderItems.reduce((total, item) => total + (item.price * item.qty), 0);
     const invoice = new Invoice({
         user: this.user,
         order: this._id,
-        delivery_fee: this.delifery_fee,
+        delivery_fee: this.delivery_fee,
         delivery_address: this.delivery_address,
         sub_total: sub_total,
-        total: sub_total + this.delifery_fee
+        total: sub_total + this.delivery_fee,
+        metode_payment: this.metode_payment
     });
     await invoice.save();
+})
+
+// pada middlware pre baru ditambahkan next() untuk melanjutkan ke proses selanjutnya
+orderSchema.post('findOneAndUpdate', async function () {
+    // this condition untuk mencari invoice berdasarkan order yg diupdate, this update untuk mendapatkan status order yg diupdate
+    const invoice = await Invoice.findOneAndUpdate({ order: this._conditions._id }, { $set: { payment_status: this._update.$set.status } });
+    // console.log(invoice)
+    // // console.log(this._conditions)
+    // console.log(this._update)
+    // console.log(this._update.$set.status)
 })
 
 module.exports = model('Order', orderSchema);

@@ -19,6 +19,10 @@ const userSchema = new Schema({
         unique: true,
         maxlength: [100, 'Email can not be more than 100 characters'],
     },
+    cart: {
+        type: Schema.Types.ObjectId,
+        ref: 'Cart'
+    },
 
     password: {
         type: String,

@@ -3,17 +3,19 @@ const router = require('express').Router();
 const { police_check } = require('../../middlewares');
 const categoryController = require('./controller');
 
-router.get('/category', categoryController.index);
+router.get('/categories', categoryController.index);
 
-router.post('/category',
+router.get('/categories/:name', categoryController.show);
+
+router.post('/categories',
     police_check('create', 'Category'),
     categoryController.store);
 
-router.put('/category/:id',
+router.put('/categories/:id',
     police_check('update', 'Category'),
     categoryController.update);
 
-router.delete('/category/:id',
+router.delete('/categories/:id',
     police_check('delete', 'Category'),
     categoryController.destroy);
 
