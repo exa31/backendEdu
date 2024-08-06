@@ -50,10 +50,6 @@ app.use('/', (req, res) => {
 // kesini dulu baru ke error handler
 // catch 404 and forward to error handler
 
-app.listen(3000, () => {
-  console.log('Server is running on port 3000');
-})
-
 app.use(function (req, res, next) {
   next(createError(404));
 });
@@ -70,4 +66,5 @@ app.use(function (err, req, res, next) {
 });
 
 
-// module.exports = app;
+
+module.exports = app;
