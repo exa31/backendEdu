@@ -64,7 +64,13 @@ orderSchema.pre('save', async function (next) {
         user: this.user,
         order: this._id,
         delivery_fee: this.delivery_fee,
-        delivery_address: this.delivery_address,
+        delivery_address: {
+            kelurahan: this.delivery_address.kelurahan,
+            kecamatan: this.delivery_address.kecamatan,
+            kabupaten: this.delivery_address.kabupaten,
+            provinsi: this.delivery_address.provinsi,
+            detail: this.delivery_address.detail
+        },
         sub_total: sub_total,
         total: sub_total + this.delivery_fee,
         metode_payment: this.metode_payment
