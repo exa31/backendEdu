@@ -51,10 +51,8 @@ const CartItem = require('../cartItem/model');
 const addCart = async (req, res, next) => {
     try {
         const { productId } = req.body;
-        console.log(productId);
         const cart = await CartItem.findOne({ user: req.user._id });
         const existingItem = cart.items.some(item => {
-            console.log(item.qty);
             return item.product.toString() === productId
         });
         if (existingItem) {

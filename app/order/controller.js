@@ -19,7 +19,11 @@ const store = async (req, res, next) => {
             delivery_fee: delivery_fee,
             metode_payment: metode_payment,
             delivery_address: {
-                _id: address._id,
+                kelurahan: address.kelurahan,
+                kecamatan: address.kecamatan,
+                kabupaten: address.kabupaten,
+                provinsi: address.provinsi,
+                detail: address.detail
             },
             orderItems: [],
             user: req.user._id

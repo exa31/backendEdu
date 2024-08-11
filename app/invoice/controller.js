@@ -6,9 +6,9 @@ const show = async (req, res, next) => {
     try {
         const { order_id } = req.params;
         const invoice = await Invoice.findOne({ order: order_id }).populate('order').populate('user').populate('delivery_address');
-        console.log(invoice);
+        console.log(invoice.user.id);
         const police = policyFor(req.user);
-        const subjectInvoice = subject('Invoice', { user_id: invoice.user._id });
+        const subjectInvoice = subject('Invoices', { user_id: invoice.user.id });
         if (!police.can('read', subjectInvoice)) {
             return res.json({
                 error: 1,
@@ -35,6 +35,7 @@ const index = async (req, res, next) => {
                     }
                 }
             });
+        console.log(invoices);
         return res.json(invoices);
     } catch (error) {
         next(error);

@@ -18,8 +18,31 @@ const orderSchema = Schema({
         ref: 'User'
     },
     delivery_address: {
-        type: Schema.Types.ObjectId,
-        ref: 'DeliveryAddress'
+        kelurahan: {
+            type: String,
+            maxlength: [255, 'Panjang nama kelurahan maksimal 255 karakter'],
+            required: [true, 'Nama kelurahan harus diisi']
+        },
+        kecamatan: {
+            type: String,
+            maxlength: [255, 'Panjang nama kecamatan maksimal 255 karakter'],
+            required: [true, 'Nama kecamatan harus diisi']
+        },
+        kabupaten: {
+            type: String,
+            maxlength: [255, 'Panjang nama kabupaten maksimal 255 karakter'],
+            required: [true, 'Nama kabupaten harus diisi']
+        },
+        provinsi: {
+            type: String,
+            maxlength: [255, 'Panjang nama provinsi maksimal 255 karakter'],
+            required: [true, 'Nama provinsi harus diisi']
+        },
+        detail: {
+            type: String,
+            maxlength: [1000, 'Panjang detail alamat maksimal 1000 karakter'],
+            required: [true, 'Detail alamat harus diisi']
+        },
     },
     metode_payment: {
         type: String,
@@ -35,11 +58,7 @@ orderSchema.plugin(AutoIncrement, { inc_field: 'order_number' });
 // orderSchema.virtual('items_count').get(function () {
 //     return this.orderItems.reduce((total, item) => total + parseInt(item.qty), 0);
 // });
-orderSchema.post('save', async function () {
-    this.orderItems.forEach(product => {
-        console.log(product.name)
-
-    });
+orderSchema.pre('save', async function (next) {
     const sub_total = this.orderItems.reduce((total, item) => total + (item.price * item.qty), 0);
     const invoice = new Invoice({
         user: this.user,
@@ -51,12 +70,13 @@ orderSchema.post('save', async function () {
         metode_payment: this.metode_payment
     });
     await invoice.save();
+    next();
 })
 
 // pada middlware pre baru ditambahkan next() untuk melanjutkan ke proses selanjutnya
 orderSchema.post('findOneAndUpdate', async function () {
     // this condition untuk mencari invoice berdasarkan order yg diupdate, this update untuk mendapatkan status order yg diupdate
-    const invoice = await Invoice.findOneAndUpdate({ order: this._conditions._id }, { $set: { payment_status: this._update.$set.status } });
+    await Invoice.findOneAndUpdate({ order: this._conditions._id }, { $set: { payment_status: this._update.$set.status } });
     // console.log(invoice)
     // // console.log(this._conditions)
     // console.log(this._update)

@@ -2,15 +2,6 @@ const { subject } = require('@casl/ability');
 const DeliveryAddress = require('./model');
 const policyFor = require('../../utils').policyFor;
 
-const index = async (req, res, next) => {
-    try {
-        const deliveryAddress = await DeliveryAddress.find().populate('user');
-        return res.json(deliveryAddress);
-    } catch (err) {
-        next(err);
-    }
-}
-
 const show = async (req, res, next) => {
     try {
         const user = req.user;
@@ -120,7 +111,6 @@ const destroy = async (req, res, next) => {
 }
 
 module.exports = {
-    index,
     store,
     update,
     show,

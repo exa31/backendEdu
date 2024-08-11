@@ -22,8 +22,31 @@ const invoiceSchema = Schema({
         enum: ['transfer', 'tunai'],
     },
     delivery_address: {
-        type: Schema.Types.ObjectId,
-        ref: 'DeliveryAddress'
+        kelurahan: {
+            type: String,
+            maxlength: [255, 'Panjang nama kelurahan maksimal 255 karakter'],
+            required: [true, 'Nama kelurahan harus diisi']
+        },
+        kecamatan: {
+            type: String,
+            maxlength: [255, 'Panjang nama kecamatan maksimal 255 karakter'],
+            required: [true, 'Nama kecamatan harus diisi']
+        },
+        kabupaten: {
+            type: String,
+            maxlength: [255, 'Panjang nama kabupaten maksimal 255 karakter'],
+            required: [true, 'Nama kabupaten harus diisi']
+        },
+        provinsi: {
+            type: String,
+            maxlength: [255, 'Panjang nama provinsi maksimal 255 karakter'],
+            required: [true, 'Nama provinsi harus diisi']
+        },
+        detail: {
+            type: String,
+            maxlength: [1000, 'Panjang detail alamat maksimal 1000 karakter'],
+            required: [true, 'Detail alamat harus diisi']
+        },
     },
     payment_status: {
         type: String,
